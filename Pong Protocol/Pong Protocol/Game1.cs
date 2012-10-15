@@ -10,6 +10,7 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
 using Pong_Protocol.Sprites;
+using Pong_Protocol.Networking;
 
 namespace Pong_Protocol {
     /// <summary>
@@ -18,8 +19,9 @@ namespace Pong_Protocol {
     public class Game1 : Microsoft.Xna.Framework.Game {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        Paddle paddle;
-
+        Paddle paddle, paddle2;
+        Server server;
+        Client client;
         public Game1() {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
@@ -33,8 +35,13 @@ namespace Pong_Protocol {
         /// </summary>
         protected override void Initialize() {
             // TODO: Add your initialization logic here
+            server = new Server();
+            client = new Client();
+            client.Connect("127.0.0.1", 1);
             paddle = new Paddle(this, new Vector2(20, 20));
+            paddle2 = new Paddle(this, new Vector2(500, 20));
             Components.Add(paddle);
+            Components.Add(paddle2);
 
             base.Initialize();
         }
@@ -69,7 +76,11 @@ namespace Pong_Protocol {
                 this.Exit();
 
             // TODO: Add your update logic here
-
+            server.Send(paddle._info);
+            if (client.recieve != null) {
+                paddle2.Enabled = false;
+                paddle2.Update(client.recieve.velocity);
+            }
             base.Update(gameTime);
         }
 
@@ -83,6 +94,11 @@ namespace Pong_Protocol {
             // TODO: Add your drawing code here
 
             base.Draw(gameTime);
+        }
+        protected override void OnExiting(object sender, EventArgs args) {
+            client.CloseSocket();
+            server.Close();
+            base.OnExiting(sender, args);
         }
     }
 }
