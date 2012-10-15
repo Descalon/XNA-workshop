@@ -9,6 +9,8 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
+using Pong_Protocol.Sprites;
+
 namespace Pong_Protocol {
     /// <summary>
     /// This is the main type for your game
@@ -16,6 +18,7 @@ namespace Pong_Protocol {
     public class Game1 : Microsoft.Xna.Framework.Game {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+        Paddle paddle;
 
         public Game1() {
             graphics = new GraphicsDeviceManager(this);
@@ -30,6 +33,8 @@ namespace Pong_Protocol {
         /// </summary>
         protected override void Initialize() {
             // TODO: Add your initialization logic here
+            paddle = new Paddle(this, new Vector2(20, 20));
+            Components.Add(paddle);
 
             base.Initialize();
         }
@@ -41,7 +46,7 @@ namespace Pong_Protocol {
         protected override void LoadContent() {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
-
+            
             // TODO: use this.Content to load your game content here
         }
 
@@ -73,7 +78,7 @@ namespace Pong_Protocol {
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime) {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(Color.Black);
 
             // TODO: Add your drawing code here
 
