@@ -36,6 +36,7 @@ namespace Pong_Protocol.Sprites {
         public Vector2 drag;
         public Texture2D image;
         public Rectangle box;
+
         public Paddle(Game game, Vector2 position)
             : base(game) {
             this.position = position;
@@ -63,7 +64,7 @@ namespace Pong_Protocol.Sprites {
                 Enabled = false;
             }
             position += velocity;
-            
+
             if (position.Y >= Game.GraphicsDevice.Viewport.Height - box.Height) {
                 position.Y = Game.GraphicsDevice.Viewport.Height - box.Height;
             }
@@ -73,11 +74,11 @@ namespace Pong_Protocol.Sprites {
         }
 
         public override void Update(GameTime gameTime) {
-            
+
             box.X = (int)position.X;
             box.Y = (int)position.Y;
             velocity = Vector2.Zero;
-            
+
             if (Keyboard.GetState().IsKeyDown(Keys.Up)) {
                 velocity.Y -= drag.Y;
             }
@@ -87,7 +88,7 @@ namespace Pong_Protocol.Sprites {
 
             position += velocity;
             _info.velocity = velocity;
-            
+
             if (position.Y >= Game.GraphicsDevice.Viewport.Height - box.Height) {
                 position.Y = Game.GraphicsDevice.Viewport.Height - box.Height;
             }

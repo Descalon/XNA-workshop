@@ -13,21 +13,36 @@ using System.Runtime.Serialization.Formatters;
 using Pong_Protocol.Sprites;
 
 namespace Pong_Protocol.Networking {
+    public delegate void ClientConnectEventHandler(object sender, EventArgs e);
+
     public class Server {
+        public event ClientConnectEventHandler onClientConnect;
+
         public TcpListener listener;
         public TcpClient client;
         private PaddleInfo send = null;
         Thread t;
 
-        public Server(){
-            listener = new TcpListener(IPAddress.Parse("127.0.0.1"), 1337);
-            listener.Start();
-            t = new Thread(new ThreadStart(Listen));
-            t.Start();
+        private Server(){
+            
+        }
+        protected void OnConnect(EventArgs e) {
+            if (onClientConnect != null) {
+                onClientConnect(this, e);
+            }
+        }
+        public static Server CreateSession(string ipAddress, int port = 1337) {
+            Server s = new Server();
+            s.listener = new TcpListener(IPAddress.Parse(ipAddress), port);
+            s.listener.Start();
+            s.t = new Thread(new ThreadStart(s.Listen));
+            s.t.Start();
+            return s;
         }
         public void Listen() {
             try {
                 client = listener.AcceptTcpClient();
+                OnConnect(EventArgs.Empty);
             } catch (SocketException e) {
                 Console.WriteLine("Client exited forcibly: {0}", e); //LOG
                 return;

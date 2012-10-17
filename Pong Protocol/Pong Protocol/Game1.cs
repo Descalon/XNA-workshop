@@ -8,23 +8,51 @@ using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
-
+using Microsoft.Xna.Framework.Net;
 using Pong_Protocol.Sprites;
 using Pong_Protocol.Networking;
 
 namespace Pong_Protocol {
+    public enum PongState {
+        Title,
+        Game
+    }
     /// <summary>
     /// This is the main type for your game
     /// </summary>
     public class Game1 : Microsoft.Xna.Framework.Game {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        Paddle paddle, paddle2;
+        PongState state;
+        Paddle me;
+        Paddle you;
         Server server;
         Client client;
+        bool keyPressed;
+
         public Game1() {
+            server = null;
+            state = PongState.Title;
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+        }
+        void OnServerConnect(object sender, EventArgs e) {
+            client = Client.SetClient(server.client);
+
+            me = new Paddle(this, new Vector2(720, 300));
+            you = new Paddle(this, new Vector2(80, 300));
+            Components.Add(me);
+            Components.Add(you);
+
+            state = PongState.Game;
+        }
+        void OnClientConnect(object sender, EventArgs e) {
+            me = new Paddle(this, new Vector2(80, 300));
+            you = new Paddle(this, new Vector2(720, 300));
+            Components.Add(me);
+            Components.Add(you);
+
+            state = PongState.Game;
         }
 
         /// <summary>
@@ -35,13 +63,6 @@ namespace Pong_Protocol {
         /// </summary>
         protected override void Initialize() {
             // TODO: Add your initialization logic here
-            server = new Server();
-            client = new Client();
-            client.Connect("127.0.0.1", 1);
-            paddle = new Paddle(this, new Vector2(20, 20));
-            paddle2 = new Paddle(this, new Vector2(500, 20));
-            Components.Add(paddle);
-            Components.Add(paddle2);
 
             base.Initialize();
         }
@@ -53,7 +74,7 @@ namespace Pong_Protocol {
         protected override void LoadContent() {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            
+
             // TODO: use this.Content to load your game content here
         }
 
@@ -72,14 +93,41 @@ namespace Pong_Protocol {
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime) {
             // Allows the game to exit
+            KeyboardState currentState = Keyboard.GetState();
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
+            if (Keyboard.GetState().IsKeyDown(Keys.Escape)) {
+                this.Exit();
+            }
 
-            // TODO: Add your update logic here
-            server.Send(paddle._info);
-            if (client.recieve != null) {
-                paddle2.Enabled = false;
-                paddle2.Update(client.recieve.velocity);
+            if (state == PongState.Title) {
+                if (Keyboard.GetState().IsKeyDown(Keys.Enter) && !keyPressed) {
+                    keyPressed = true;
+                    Console.WriteLine("hit"); //LOG
+                    server = Server.CreateSession("127.0.0.1");
+                    server.onClientConnect += OnServerConnect;
+                }
+                if (Keyboard.GetState().IsKeyDown(Keys.Space) && !keyPressed) {
+                    keyPressed = true;
+                    client = Client.Connect("127.0.0.1");
+                    client.onClientConnect += OnClientConnect;                    
+                }
+                if (keyPressed &&
+                    (Keyboard.GetState().IsKeyUp(Keys.Enter) && Keyboard.GetState().IsKeyUp(Keys.Space))) {
+                    keyPressed = false;
+                }
+
+            } else if(state == PongState.Game) {
+                if (you.Enabled) {
+                    you.Enabled = false;
+                }
+                if (server != null) {
+                    server.Send(me._info);
+                } else {
+                    if (client.recieve != null) {
+                        you.Update(client.recieve.velocity);
+                    }
+                }
             }
             base.Update(gameTime);
         }
@@ -96,8 +144,6 @@ namespace Pong_Protocol {
             base.Draw(gameTime);
         }
         protected override void OnExiting(object sender, EventArgs args) {
-            client.CloseSocket();
-            server.Close();
             base.OnExiting(sender, args);
         }
     }
